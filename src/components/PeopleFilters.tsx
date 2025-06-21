@@ -1,4 +1,42 @@
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+
 export const PeopleFilters = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState('');
+  const [userId, setUserId] = useState(0);
+  const [letters, setLetters] = useState<string[]>([]);
+
+  function handlePageChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    setUserId(+event.target.value);
+  }
+
+  function handleCenturyChange(century: string) {
+    const newParams = new URLSearchParams(searchParams);
+    const centuries = newParams.getAll('centuries');
+
+    if (centuries.includes(century)) {
+      const updated = centuries.filter(c => c !== century);
+
+      newParams.delete('centuries');
+      updated.forEach(c => newParams.append('centuries', c));
+    } else {
+      newParams.append('centuries', century);
+    }
+
+    console.log(newParams);
+
+    setSearchParams(newParams.toString()); // або setSearchParams(newParams.toString());
+  }
+
+  function toggleLetter(ch: string) {
+    setLetters((currentLetters: string[]) =>
+      currentLetters.includes(ch)
+        ? currentLetters.filter((letter: string) => letter !== ch)
+        : [...currentLetters, ch],
+    );
+  }
+
   return (
     <nav className="panel">
       <p className="panel-heading">Filters</p>
@@ -33,13 +71,17 @@ export const PeopleFilters = () => {
       <div className="panel-block">
         <div className="level is-flex-grow-1 is-mobile" data-cy="CenturyFilter">
           <div className="level-left">
-            <a
+            <Link
               data-cy="century"
               className="button mr-1"
-              href="#/people?centuries=16"
+              to={{
+                pathname: '/people',
+                search: '?centuries=16',
+              }}
+              onClick={() => handleCenturyChange('16')}
             >
               16
-            </a>
+            </Link>
 
             <a
               data-cy="century"
