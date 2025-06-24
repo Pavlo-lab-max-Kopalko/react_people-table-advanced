@@ -1,11 +1,88 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Person } from '../types';
 import { PersonLink } from './PersonLink';
 
 export const PeopleTable = ({ people }: { people: Person[] }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedCenturies = searchParams.getAll('centuries');
+  const selectedSex = searchParams.get('sex');
+  const sortBy = searchParams.get('sort');
+  const sortOrder = searchParams.get('order');
+  const location = useLocation();
+
+  const handleSort = (field: string) => {
+    setSearchParams(prevSearchParams => {
+      const newSearchParams = new URLSearchParams(prevSearchParams.toString());
+
+      if (sortBy !== field) {
+        newSearchParams.delete('sort');
+        newSearchParams.delete('order');
+        newSearchParams.set('sort', field);
+      } else if (!sortOrder) {
+        newSearchParams.set('order', 'desc');
+      } else {
+        newSearchParams.delete('sort');
+        newSearchParams.delete('order');
+      }
+
+      return newSearchParams;
+    });
+  };
+
+  let filteredItems: Person[] = JSON.parse(JSON.stringify(people));
+
+  // 1. Фільтрація за століттями
+
+  if (selectedCenturies.length > 0) {
+    filteredItems = filteredItems.filter((item: Person) => {
+      // Розраховуємо століття на основі року народження 'born'
+      // Приклад: 1750 рік народження => Math.ceil(1750 / 100) = 18 століття
+      // Перетворюємо в рядок, оскільки selectedCenturies також містить рядки ('18', '19')
+      const personCentury = String(Math.ceil(item.born / 100));
+
+      return selectedCenturies.includes(personCentury);
+    });
+  }
+
+  // 2. Фільтрація за статтю
+  if (selectedSex) {
+    filteredItems = filteredItems.filter(
+      (item: Person) => item.sex === selectedSex,
+    );
+  }
+
+  // 3. Сортування
+  if (sortBy) {
+    filteredItems.sort((a: Person, b: Person) => {
+      // Перевіряємо, чи sortBy є коректним ключем для Person
+      const valueA = a[sortBy as keyof Person];
+      const valueB = b[sortBy as keyof Person];
+
+      if (valueA === undefined || valueB === undefined) {
+        return 0;
+      }
+
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return sortOrder === 'desc'
+          ? valueB.localeCompare(valueA)
+          : valueA.localeCompare(valueB);
+      }
+
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
+      }
+
+      return 0; // Не змінювати порядок
+    });
+  }
+
+  console.log(filteredItems);
+
   return (
     <>
-      {people.length === 0 ? (
+      {filteredItems.length === 0 ? (
         <p data-cy="noPeopleMessage">There are no people on the server</p>
       ) : (
         <table
@@ -17,9 +94,24 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
               <th>
                 <span className="is-flex is-flex-wrap-nowrap">
                   Name
-                  <a href="#/people?sort=name">
-                    <span className="icon">
-                      <i className="fas fa-sort" />
+                  <a>
+                    <span
+                      className="icon"
+                      onClick={(event: React.MouseEvent<HTMLSpanElement>) => {
+                        event.preventDefault();
+                        handleSort('name');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <i
+                        className={
+                          sortBy !== 'name'
+                            ? 'fas fa-sort'
+                            : sortOrder === 'desc'
+                              ? 'fas fa-sort-down'
+                              : 'fas fa-sort-up'
+                        }
+                      />
                     </span>
                   </a>
                 </span>
@@ -28,9 +120,24 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
               <th>
                 <span className="is-flex is-flex-wrap-nowrap">
                   Sex
-                  <a href="#/people?sort=sex">
-                    <span className="icon">
-                      <i className="fas fa-sort" />
+                  <a>
+                    <span
+                      className="icon"
+                      onClick={(event: React.MouseEvent<HTMLSpanElement>) => {
+                        event.preventDefault();
+                        handleSort('sex');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <i
+                        className={
+                          sortBy !== 'sex' // або інша колонка
+                            ? 'fas fa-sort'
+                            : sortOrder === 'desc'
+                              ? 'fas fa-sort-down'
+                              : 'fas fa-sort-up'
+                        }
+                      />
                     </span>
                   </a>
                 </span>
@@ -39,9 +146,24 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
               <th>
                 <span className="is-flex is-flex-wrap-nowrap">
                   Born
-                  <a href="#/people?sort=born&amp;order=desc">
-                    <span className="icon">
-                      <i className="fas fa-sort-up" />
+                  <a>
+                    <span
+                      className="icon"
+                      onClick={(event: React.MouseEvent<HTMLSpanElement>) => {
+                        event.preventDefault();
+                        handleSort('born');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <i
+                        className={
+                          sortBy !== 'born'
+                            ? 'fas fa-sort'
+                            : sortOrder === 'desc'
+                              ? 'fas fa-sort-down'
+                              : 'fas fa-sort-up'
+                        }
+                      />
                     </span>
                   </a>
                 </span>
@@ -50,9 +172,24 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
               <th>
                 <span className="is-flex is-flex-wrap-nowrap">
                   Died
-                  <a href="#/people?sort=died">
-                    <span className="icon">
-                      <i className="fas fa-sort" />
+                  <a>
+                    <span
+                      className="icon"
+                      onClick={(event: React.MouseEvent<HTMLSpanElement>) => {
+                        event.preventDefault();
+                        handleSort('died');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <i
+                        className={
+                          sortBy !== 'died'
+                            ? 'fas fa-sort'
+                            : sortOrder === 'desc'
+                              ? 'fas fa-sort-down'
+                              : 'fas fa-sort-up'
+                        }
+                      />
                     </span>
                   </a>
                 </span>
