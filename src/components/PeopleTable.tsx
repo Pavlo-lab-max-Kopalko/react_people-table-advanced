@@ -1,8 +1,7 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Person } from '../types';
 import { PersonLink } from './PersonLink';
-import { NoPeople, Nopeople } from './Nopeople';
 
 export const PeopleTable = ({ people }: { people: Person[] }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -12,7 +11,6 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
   const sortBy = searchParams.get('sort');
   const sortOrder = searchParams.get('order');
   const query: string | null = searchParams.get('query');
-  const location = useLocation();
 
   const handleSort = (field: string) => {
     setSearchParams(prevSearchParams => {
@@ -35,20 +33,14 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
 
   let filteredItems: Person[] = JSON.parse(JSON.stringify(people));
 
-  // 1. Фільтрація за століттями
-
   if (selectedCenturies.length > 0) {
     filteredItems = filteredItems.filter((item: Person) => {
-      // Розраховуємо століття на основі року народження 'born'
-      // Приклад: 1750 рік народження => Math.ceil(1750 / 100) = 18 століття
-      // Перетворюємо в рядок, оскільки selectedCenturies також містить рядки ('18', '19')
       const personCentury = String(Math.ceil(item.born / 100));
 
       return selectedCenturies.includes(personCentury);
     });
   }
 
-  // 2. Фільтрація за статтю
   if (selectedSex) {
     filteredItems = filteredItems.filter(
       (item: Person) => item.sex === selectedSex,
@@ -56,27 +48,23 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
   }
 
   if (query) {
-    // Перевіряємо, чи існує query параметр
-    const lowerCaseQuery = query.toLowerCase(); // Перетворюємо запит у нижній регістр для регістронезалежного пошуку
+    const lowerCaseQuery = query.toLowerCase();
 
     filteredItems = filteredItems.filter((item: Person) => {
       const nameMatches = item.name.toLowerCase().includes(lowerCaseQuery);
       const fatherNameMatches = item.fatherName
         ?.toLowerCase()
-        .includes(lowerCaseQuery); // Використовуємо optional chaining (?)
+        .includes(lowerCaseQuery);
       const motherNameMatches = item.motherName
         ?.toLowerCase()
-        .includes(lowerCaseQuery); // Використовуємо optional chaining (?)
+        .includes(lowerCaseQuery);
 
-      // Повертаємо true, якщо збігається хоча б одне з полів
       return nameMatches || fatherNameMatches || motherNameMatches;
     });
   }
 
-  // 3. Сортування
   if (sortBy) {
     filteredItems.sort((a: Person, b: Person) => {
-      // Перевіряємо, чи sortBy є коректним ключем для Person
       const valueA = a[sortBy as keyof Person];
       const valueB = b[sortBy as keyof Person];
 
@@ -94,16 +82,14 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
         return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
       }
 
-      return 0; // Не змінювати порядок
+      return 0;
     });
   }
-
-  console.log(filteredItems);
 
   return (
     <>
       {filteredItems.length === 0 ? (
-        <NoPeople people={people} filteredPeople={filteredItems} />
+        <p>There are no people matching the current search criteria</p>
       ) : (
         <table
           data-cy="peopleTable"

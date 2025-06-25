@@ -1,25 +1,13 @@
-import { useState } from 'react';
-import { Link, NavLink, useLocation, useSearchParams } from 'react-router-dom';
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
 
 export const PeopleFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState('');
-  const [userId, setUserId] = useState(0);
-  const [letters, setLetters] = useState<string[]>([]);
 
   const location = useLocation();
   const filterParams = new URLSearchParams(location.search);
   const centuries = filterParams.getAll('centuries');
 
-  console.log(centuries);
-
-  function handlePageChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    setUserId(+event.target.value);
-  }
-
   function handleQueryChange(param: string) {
-    setQuery(param);
-
     const newParams = new URLSearchParams(searchParams);
 
     newParams.set('query', param);
@@ -29,13 +17,6 @@ export const PeopleFilters = () => {
       newParams.delete('query');
       setSearchParams(newParams);
     }
-  }
-
-  function handleSexChange(param: string) {
-    const newParams = new URLSearchParams(searchParams);
-
-    newParams.set('sex', param);
-    setSearchParams(newParams);
   }
 
   function handleCenturyChange(century: string) {
@@ -51,27 +32,15 @@ export const PeopleFilters = () => {
       newParams.append('centuries', century);
     }
 
-    console.log();
-
     setSearchParams(newParams.toString());
   }
 
   function removeAllCenturies() {
     const allParams = new URLSearchParams(location.search);
 
-    console.log(allParams.toString());
-
     allParams.delete('centuries');
 
     setSearchParams(allParams);
-  }
-
-  function toggleLetter(ch: string) {
-    setLetters((currentLetters: string[]) =>
-      currentLetters.includes(ch)
-        ? currentLetters.filter((letter: string) => letter !== ch)
-        : [...currentLetters, ch],
-    );
   }
 
   const createGenderLink = (gender: string | null) => {
