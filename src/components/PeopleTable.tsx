@@ -2,6 +2,7 @@
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Person } from '../types';
 import { PersonLink } from './PersonLink';
+import { NoPeople, Nopeople } from './Nopeople';
 
 export const PeopleTable = ({ people }: { people: Person[] }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -10,6 +11,7 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
   const selectedSex = searchParams.get('sex');
   const sortBy = searchParams.get('sort');
   const sortOrder = searchParams.get('order');
+  const query: string | null = searchParams.get('query');
   const location = useLocation();
 
   const handleSort = (field: string) => {
@@ -53,6 +55,24 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
     );
   }
 
+  if (query) {
+    // Перевіряємо, чи існує query параметр
+    const lowerCaseQuery = query.toLowerCase(); // Перетворюємо запит у нижній регістр для регістронезалежного пошуку
+
+    filteredItems = filteredItems.filter((item: Person) => {
+      const nameMatches = item.name.toLowerCase().includes(lowerCaseQuery);
+      const fatherNameMatches = item.fatherName
+        ?.toLowerCase()
+        .includes(lowerCaseQuery); // Використовуємо optional chaining (?)
+      const motherNameMatches = item.motherName
+        ?.toLowerCase()
+        .includes(lowerCaseQuery); // Використовуємо optional chaining (?)
+
+      // Повертаємо true, якщо збігається хоча б одне з полів
+      return nameMatches || fatherNameMatches || motherNameMatches;
+    });
+  }
+
   // 3. Сортування
   if (sortBy) {
     filteredItems.sort((a: Person, b: Person) => {
@@ -83,7 +103,7 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
   return (
     <>
       {filteredItems.length === 0 ? (
-        <p data-cy="noPeopleMessage">There are no people on the server</p>
+        <NoPeople people={people} filteredPeople={filteredItems} />
       ) : (
         <table
           data-cy="peopleTable"
@@ -201,7 +221,7 @@ export const PeopleTable = ({ people }: { people: Person[] }) => {
           </thead>
 
           <tbody>
-            {people.map(person => {
+            {filteredItems.map(person => {
               const mother = people.find(
                 personObj => personObj.name === person.motherName,
               )?.slug;
